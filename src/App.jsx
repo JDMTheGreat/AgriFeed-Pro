@@ -9,7 +9,7 @@ import {
   onAuthStateChanged, signOut, updateProfile
 } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, query, orderBy, limit 
+  getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, query, orderBy, limit, getDoc 
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -34,6 +34,8 @@ export default function App() {
   const [inventory, setInventory] = useState([]);
   const [groups, setGroups] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [agreedToBTA, setAgreedToBTA] = useState(false);
+  const [showBTA, setShowBTA] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -64,6 +66,19 @@ export default function App() {
     const password = e.target.password.value;
     try {
       if (authMode === 'signup') {
+        if (!agreedToBTA) {
+          alert("Please agree to the Beta Testing Agreement to continue.");
+          return;
+        }
+
+        const whitelistRef = doc(db, "authorized_users", email.toLowerCase());
+        const whitelistSnap = await getDoc(whitelistRef);
+
+        if (!whitelistSnap.exists() || whitelistSnap.data().status !== 'approved') {
+          alert("Unauthorized: This email is not on the Alpha Testing list. Please contact Cyber Sanctum for access.");
+          return;
+        }
+
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName: e.target.farmName.value });
       } else {
@@ -115,19 +130,33 @@ export default function App() {
     return (group.headCount * group.dailyRevenue) - feedCost;
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#0a0f0d] text-emerald-500 font-black italic">SYSTEM INITIALIZING...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center bg-[#0a0f0d] text-emerald-500 font-black italic uppercase">System Initializing...</div>;
 
   if (!user) {
     return (
       <div className="min-h-screen bg-[#0a0f0d] flex items-center justify-center p-6 text-white font-sans">
-        <div className="w-full max-w-md bg-black border-2 border-emerald-900/30 p-8 rounded-[2.5rem] shadow-2xl">
+        <div className="w-full max-w-md bg-black border-2 border-emerald-900/30 p-8 rounded-[2.5rem] shadow-2xl relative">
           <div className="text-center mb-10">
             <Wheat className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
             <h1 className="text-4xl font-black italic uppercase tracking-tighter">AgriFeed Pro</h1>
           </div>
           <form onSubmit={handleAuth} className="space-y-6">
             {authMode === 'signup' && (
-              <input required name="farmName" placeholder="Farm Name" className="w-full bg-[#111] border-2 border-emerald-900/30 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" />
+              <>
+                <input required name="farmName" placeholder="Farm Name" className="w-full bg-[#111] border-2 border-emerald-900/30 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" />
+                <div className="flex items-start gap-3 px-2">
+                   <input 
+                    required 
+                    type="checkbox" 
+                    checked={agreedToBTA}
+                    onChange={(e) => setAgreedToBTA(e.target.checked)}
+                    className="mt-1 w-4 h-4 accent-emerald-500 rounded border-emerald-900/30" 
+                    />
+                    <label className="text-[10px] uppercase font-black text-emerald-900/60 leading-tight">
+                    I agree to the <button type="button" onClick={() => setShowBTA(true)} className="text-emerald-500 underline">Beta Testing Agreement</button>
+                    </label>
+                </div>
+              </>
             )}
             <input required name="email" type="email" placeholder="Email" className="w-full bg-[#111] border-2 border-emerald-900/30 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" />
             <input required name="password" type="password" placeholder="Password" className="w-full bg-[#111] border-2 border-emerald-900/30 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" />
@@ -138,6 +167,23 @@ export default function App() {
           <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="mt-8 text-emerald-400 text-xs font-black uppercase w-full">
             {authMode === 'login' ? "Need an account? Sign Up" : "Have an account? Login"}
           </button>
+
+          {/* BTA MODAL IN LOGIN VIEW */}
+          {showBTA && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-white/20 rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+                <div className="p-6 overflow-y-auto">
+                  <h2 className="text-xl font-bold text-white mb-4">Beta Testing Agreement</h2>
+                  <div className="text-sm text-white/70 space-y-4">
+                     <p>This software is provided "as-is" for alpha testing purposes. Cyber Sanctum makes no warranties regarding data persistence or accuracy during this phase.</p>
+                  </div>
+                </div>
+                <div className="p-4 border-t border-white/10 flex justify-end">
+                  <button onClick={() => setShowBTA(false)} className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium">Close</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
