@@ -41,3 +41,16 @@ This is an early-stage Beta. If you find calculations that don't add up or the i
 - [ ] Multi-unit support (Tons, Kg, Lbs)
 - [ ] Historical trend charts for feed costs
 - [ ] Inventory "Low Stock" alerts
+
+
+Dev Log: May 4, 2026
+
+Status: Production build live on Vercel.
+
+Database: Firestore initialized (Test Mode).
+
+Current appId: agrifeed-pro-v1
+
+Features Added: Delete confirmations, Feed Logging logic, and Net Profit margin calculations.
+
+Next Steps: Test mobile UI with wife; lock down Firebase Security Rules; implement team-sharing.
