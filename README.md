@@ -54,3 +54,26 @@ Current appId: agrifeed-pro-v1
 Features Added: Delete confirmations, Feed Logging logic, and Net Profit margin calculations.
 
 Next Steps: Test mobile UI with wife; lock down Firebase Security Rules; implement team-sharing.
+
+Dev Log: May 5, 2026
+Status: Alpha Access Control stabilized.
+
+Security: Implemented Whitelist Validation via Firestore authorized_users collection. New sign-ups now require pre-approval at the database level.
+
+Legal/Compliance: Integrated Beta Testing Agreement (BTA) modal into the onboarding workflow; added mandatory checkbox for user consent prior to account creation.
+
+Bug Fixes:
+
+Corrected JSX nesting issues where the BTA modal was orphaning code.
+
+Resolved field typos in the Auth handler (Pasword -> password).
+
+Standardized lowercase email handling to prevent whitelist bypass via casing.
+
+Next Steps:
+
+Firebase Security Rules: Transition Firestore from "Test Mode" to locked-down rules that enforce request.auth.uid matches.
+
+Mobile UI Field Test: Walk the facility floor to test button hit-boxes and readability in high-glare environments.
+
+Data Export: Build a simple CSV generator for "Warehouse" totals.
