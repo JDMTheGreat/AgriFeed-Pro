@@ -77,3 +77,49 @@ Firebase Security Rules: Transition Firestore from "Test Mode" to locked-down ru
 Mobile UI Field Test: Walk the facility floor to test button hit-boxes and readability in high-glare environments.
 
 Data Export: Build a simple CSV generator for "Warehouse" totals.
+
+🛠 Development Update: May 8, 2026
+🔒 Security & Secrets Management
+The project has moved to a Zero-Secret repository architecture. All sensitive configuration data is now handled via environment variables to ensure the codebase can be made public or shared with collaborators without compromising backend security.
+
+Environment Variables: Migrated Firebase configuration to .env files. The application now utilizes import.meta.env to load credentials at runtime.
+
+API Key Rotation: Revoked and rotated all previously exposed API keys. New keys are restricted via HTTP Referrer policies to only allow traffic from the production domain and local development environments.
+
+Git Integrity: Updated .gitignore to prevent the accidental tracking of environment files. Cleaned Git cached history to ensure no legacy credentials remain in the commit metadata.
+
+Domain Authorization: Hardened Firebase Authentication settings to strictly whitelist approved deployment subdomains, preventing unauthorized login requests from external referrers.
+
+🚀 Production & Deployment
+Vercel Integration: Successfully configured production environment variables in the Vercel dashboard. The CI/CD pipeline is now verified and functional without requiring secrets in the source code.
+
+Build Analysis: Optimized chunking logic to handle Firebase library overhead; confirmed production build stability and deployment via the Vercel edge network.
+
+📋 Technical Roadmap
+[x] Real-time Feed & Group Tracking logic
+
+[x] Alpha Whitelist Authorization
+
+[x] Environment Variable Migration
+
+[x] API Key Restriction & Referrer Policies
+
+[ ] Next: Implementation of Granular Firestore Security Rules (Production Mode).
+
+[ ] Next: Development of CSV/PDF reporting modules for inventory audits.
+
+📦 Setup for Developers
+To run this project locally:
+
+Clone the repository.
+
+Create a .env file in the root directory.
+
+Populate it with the required VITE_FIREBASE_ credentials (contact the project owner for the template).
+
+Run npm install followed by npm run dev.
+
+🖋 Dev Log: May 8, 2026
+Status: Security Hardening Complete.
+Architecture: Decoupled config from source.
+Current Build: v1.0.4-alpha
