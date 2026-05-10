@@ -1,3 +1,4 @@
+import Dashboard from './Dashboard';
 import React, { useState, useEffect } from 'react';
 import { 
   Wheat, PawPrint, TrendingUp, Plus, Trash2, 
@@ -203,15 +204,14 @@ export default function App() {
         <button onClick={() => signOut(auth)} className="mt-auto p-4 text-red-500 font-black uppercase text-xs flex items-center gap-2 hover:bg-red-500/10 rounded-xl transition-all"><LogOut size={14}/> Sign Out</button>
       </nav>
 
-      <main className="flex-1 p-8 md:p-12 overflow-y-auto">
+    <main className="flex-1 p-8 md:p-12 overflow-y-auto">
         {activeTab === 'dashboard' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <h1 className="text-6xl font-black italic uppercase tracking-tighter">{user.displayName}</h1>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
-                <p className="text-emerald-500 text-xs font-black uppercase mb-2">Total Populations</p>
-                <p className="text-5xl font-black italic">{groups.length}</p>
-              </div>
+              <Dashboard logs={logs} inventory={inventory} />
+              
+              {/* This is the box we kept from the old version */}
               <div className="bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
                 <p className="text-emerald-500 text-xs font-black uppercase mb-2">Active Logs</p>
                 <p className="text-5xl font-black italic">{logs.length}</p>
@@ -224,9 +224,9 @@ export default function App() {
           <div className="space-y-8">
             <h2 className="text-4xl font-black italic uppercase">Warehouse</h2>
             <form onSubmit={addItem} className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
-              <input required name="name" placeholder="Ingredient" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none" />
-              <input required name="cost" type="number" step="0.01" placeholder="Cost ($)" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none" />
-              <input required name="unit" placeholder="Unit (LB/TON)" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none" />
+              <input required name="name" placeholder="Ingredient" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white" />
+              <input required name="cost" type="number" step="0.01" placeholder="Cost ($)" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white" />
+              <input required name="unit" placeholder="Unit (LB/TON)" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white" />
               <button className="bg-emerald-500 text-black font-black rounded-xl uppercase hover:scale-105 transition-transform">Add Stock</button>
             </form>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -247,15 +247,15 @@ export default function App() {
           <div className="space-y-8">
             <h2 className="text-4xl font-black italic uppercase">Feeding Logs</h2>
             <form onSubmit={logFeeding} className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
-              <select name="groupId" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none">
+              <select name="groupId" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white">
                 <option value="">Select Pen</option>
                 {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
-              <select name="feedId" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none">
+              <select name="feedId" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white">
                 <option value="">Select Feed</option>
                 {inventory.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
-              <input required name="amount" type="number" step="0.01" placeholder="Amount" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none" />
+              <input required name="amount" type="number" step="0.01" placeholder="Amount" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white" />
               <button className="bg-emerald-500 text-black font-black rounded-xl uppercase flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Plus size={18}/> Log Feed</button>
             </form>
             <div className="space-y-3">
@@ -282,9 +282,9 @@ export default function App() {
           <div className="space-y-8">
             <h2 className="text-4xl font-black italic uppercase">Net Profit Analysis</h2>
             <form onSubmit={addGroup} className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
-              <input required name="name" placeholder="Pen/House Name" className="bg-[#111] p-4 rounded-xl outline-none" />
-              <input required name="count" type="number" placeholder="Head Count" className="bg-[#111] p-4 rounded-xl outline-none" />
-              <input required name="rev" type="number" step="0.01" placeholder="Daily Rev/Head ($)" className="bg-[#111] p-4 rounded-xl outline-none" />
+              <input required name="name" placeholder="Pen/House Name" className="bg-[#111] p-4 rounded-xl outline-none text-white" />
+              <input required name="count" type="number" placeholder="Head Count" className="bg-[#111] p-4 rounded-xl outline-none text-white" />
+              <input required name="rev" type="number" step="0.01" placeholder="Daily Rev/Head ($)" className="bg-[#111] p-4 rounded-xl outline-none text-white" />
               <button className="bg-emerald-500 text-black font-black rounded-xl uppercase">Track Pen</button>
             </form>
             <div className="grid grid-cols-1 gap-4">

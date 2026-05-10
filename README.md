@@ -123,3 +123,36 @@ Run npm install followed by npm run dev.
 Status: Security Hardening Complete.
 Architecture: Decoupled config from source.
 Current Build: v1.0.4-alpha
+
+This abbreviated dev log is perfect for a README.md. It highlights the pivot from a monolithic structure to a modular architecture, which is a big "pro" for any software project.
+
+🛠 Dev Log: Alpha Phase (V1.0.x)
+[2026-05-10] Component Migration & State Integration
+Refactor: Migrated monolithic Dashboard logic into a dedicated /components/Dashboard.jsx module to improve maintainability and UI scalability.
+
+State Sync: Successfully mapped global inventory and logs state from App.jsx to the Dashboard via props.
+
+Logic Update: Implemented reduce methods within the Dashboard to dynamically calculate total warehouse weight and estimated burn rates across multiple inventory items.
+
+UI/UX: Fixed nesting issues in the main navigation container and standardized input field visibility with text-white utility classes.
+
+[2026-05-08] Security & Whitelisting
+Auth: Integrated Firebase Authentication with a custom "Alpha Whitelist" gate. Users must be pre-approved in the authorized_users Firestore collection to register.
+
+Legal: Added Beta Testing Agreement (BTA) modal to the signup flow to ensure compliance during the Alpha testing phase.
+
+[2026-05-01] Core Logic Engine
+Data Model: Established Firestore schema for inventory, groups (pens/houses), and logs.
+
+Margin Analysis: Built the first iteration of the "Net Profit" engine, which subtracts real-time feed consumption costs from projected head-count revenue.
+
+🚀 Current Tech Stack
+Frontend: React (Vite)
+
+Styling: Tailwind CSS
+
+Icons: Lucide-React
+
+Backend/DB: Firebase Auth & Firestore
+
+Deployment: Vercel
