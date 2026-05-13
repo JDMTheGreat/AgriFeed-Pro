@@ -127,12 +127,36 @@ export default function App() {
     e.target.reset();
   };
 
-  const calculateMargin = (group) => {
-    const groupLogs = logs.filter(l => l.groupId === group.id);
+ const calculateMargin = (group) => {
+    // 1. Get logs just for this pen, sorted by time
+    const groupLogs = logs
+      .filter(l => l.groupId === group.id)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // 2. Find the most recent "Audit" (This is our 'known' starting point)
+    const lastAudit = groupLogs.find(l => l.logType === 'audit');
+    const lastAuditTime = lastAudit ? new Date(lastAudit.timestamp) : new Date(0);
+
+    // 3. Find all "Refills" that happened SINCE that audit
+    const refillsSinceAudit = groupLogs.filter(l => 
+      l.logType === 'refill' && new Date(l.timestamp) > lastAuditTime
+    );
+
+    // 4. Calculate Total Consumption cost
+    // If we have an audit, we assume the 'Audit amount' is still in the bin, 
+    // so we only charge for what was consumed (Daily Feeding logs).
     const feedCost = groupLogs.reduce((acc, log) => {
       const item = inventory.find(i => i.id === log.feedId);
-      return acc + (item ? item.costPerUnit * log.amount : 0);
+      if (!item) return acc;
+      
+      // For now, we sum 'consumption' logs. 
+      // In a 'Bulk' mode, we'd calculate: (Refills) - (Current Audit)
+      if (log.logType === 'consumption') {
+        return acc + (item.costPerUnit * log.amount);
+      }
+      return acc;
     }, 0);
+
     return (group.headCount * group.dailyRevenue) - feedCost;
   };
 
