@@ -112,12 +112,17 @@ export default function App() {
 
   const logFeeding = async (e) => {
     e.preventDefault();
+    const formData = new FormData(e.target);
     const userPath = ['artifacts', appId, 'users', user.uid];
+    const now = new Date();
+    
     await addDoc(collection(db, ...userPath, 'logs'), {
-      groupId: e.target.groupId.value,
-      feedId: e.target.feedId.value,
-      amount: parseFloat(e.target.amount.value),
-      timestamp: new Date().toISOString()
+      groupId: formData.get('groupId'),
+      feedId: formData.get('feedId'),
+      amount: parseFloat(formData.get('amount')),
+      logType: formData.get('logType'), // refill, consumption, or audit
+      timestamp: now.toISOString(),
+      date: now.toISOString().split('T')[0] // Stores as "2026-05-12"
     });
     e.target.reset();
   };
@@ -245,30 +250,57 @@ export default function App() {
 
         {activeTab === 'logs' && (
           <div className="space-y-8">
-            <h2 className="text-4xl font-black italic uppercase">Feeding Logs</h2>
-            <form onSubmit={logFeeding} className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
-              <select name="groupId" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white">
+            <h2 className="text-4xl font-black italic uppercase">Feeding & Bin Logs</h2>
+            
+            {/* LOG FORM */}
+            <form onSubmit={logFeeding} className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
+              <select name="groupId" required className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white font-bold">
                 <option value="">Select Pen</option>
                 {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
-              <select name="feedId" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white">
+              
+              <select name="feedId" required className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white font-bold">
                 <option value="">Select Feed</option>
                 {inventory.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
-              <input required name="amount" type="number" step="0.01" placeholder="Amount" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white" />
-              <button className="bg-emerald-500 text-black font-black rounded-xl uppercase flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Plus size={18}/> Log Feed</button>
+
+              <select name="logType" required className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white font-bold text-xs uppercase">
+                <option value="consumption">Daily Feeding</option>
+                <option value="refill">Bin Refill</option>
+                <option value="audit">Silo Audit (Leftover)</option>
+              </select>
+
+              <input required name="amount" type="number" step="0.01" placeholder="Amount" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white font-bold" />
+              
+              <button className="bg-emerald-500 text-black font-black rounded-xl uppercase flex items-center justify-center gap-2 hover:scale-105 transition-transform">
+                <Plus size={18}/> Log Entry
+              </button>
             </form>
+
+            {/* LOG HISTORY LIST */}
             <div className="space-y-3">
               {logs.map(log => {
                 const g = groups.find(x => x.id === log.groupId);
                 const i = inventory.find(x => x.id === log.feedId);
+                
+                // Visual logic for different log types
+                const isRefill = log.logType === 'refill';
+                const isAudit = log.logType === 'audit';
+                
                 return (
                   <div key={log.id} className="bg-black/40 border border-white/5 p-5 rounded-2xl flex justify-between items-center group">
                     <div className="flex items-center gap-4">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <span className="font-black uppercase italic text-sm tracking-tight">
-                            {g?.name || 'Deleted Pen'} <span className="text-emerald-500/50 mx-2">consumed</span> {log.amount} {i?.unit || 'Units'} <span className="text-emerald-500/50 mx-2">of</span> {i?.name || 'Deleted Ingredient'}
-                        </span>
+                        <div className={`w-2 h-2 rounded-full ${isRefill ? 'bg-blue-500' : isAudit ? 'bg-amber-500' : 'bg-emerald-500'}`}></div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{log.date}</span>
+                          <span className="font-black uppercase italic text-sm tracking-tight">
+                              {g?.name || 'Unknown Location'} 
+                              <span className={`${isRefill ? 'text-blue-500' : isAudit ? 'text-amber-500' : 'text-emerald-500'} mx-2 uppercase text-[10px] not-italic font-black`}>
+                                {log.logType || 'consumed'}
+                              </span> 
+                              {log.amount} {i?.unit || 'Units'} of {i?.name || 'Feed'}
+                          </span>
+                        </div>
                     </div>
                     <button onClick={() => confirmDelete('logs', log.id)} className="text-white/10 group-hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
                   </div>
