@@ -156,3 +156,47 @@ Icons: Lucide-React
 Backend/DB: Firebase Auth & Firestore
 
 Deployment: Vercel
+
+🛠 Dev Log: May 12, 2026
+Project: Agrifeed Pro - Inventory & Hybrid Logic Update
+Overview
+Today’s sprint focused on transitioning the feeding logic from a single-stream "daily logger" to a robust, hybrid system capable of handling both Open Bunk (Daily) and Bulk Bin (Periodic) workflows. This ensures the app is highly flexible for small-to-medium scale farmers who may use multiple feeding methods across their property.
+
+Key Features Added
+Hybrid Log Engine:
+
+Implemented three distinct log types: Consumption (Daily), Refill (Inventory In), and Audit (Inventory Check).
+
+System now distinguishes between "guessed" daily amounts and "actual" inventory disappearance for precise margin tracking.
+
+Bunk Scoring System:
+
+Integrated an optional Bunk Score (0-3) field for paddock/pen feeders.
+
+Allows farmers to track consumption efficiency and identify waste or animal health issues via "slickside" vs. "heavy leftover" trends.
+
+Responsive Multi-Mode UI:
+
+Redesigned the Feeding Log form with a 6-column responsive grid.
+
+Added visual status indicators (Emerald for daily, Blue for Refills, Amber for Audits) for high-speed scannability in field conditions.
+
+Added field labels for better accessibility in high-glare environments.
+
+Enhanced Audit Logic:
+
+Backend logic updated to prepare for "Inventory Flow" calculations: (Starting Audit + Refills) - Ending Audit = True Burn.
+
+Technical Implementation
+Firestore Schema: Updated log documents to include logType, bunkScore, and ISO-standard date strings for cleaner daily grouping.
+
+State Management: Optimized calculateMargin to prioritize Audit "Truth Checks" over daily consumption estimates where applicable.
+
+UI/UX: Implemented Tailwind CSS appearance-none and custom flex-stacking for mobile-first data entry.
+
+Next Steps
+[ ] Implement "Quick-Log" memory to default to the last-used Pen and Amount.
+
+[ ] Build the "Daily Burn" summary report to visualize tank depletion rates.
+
+[ ] Add "Low Stock" visual alerts to the Dashboard based on projected burn from last Audit.
