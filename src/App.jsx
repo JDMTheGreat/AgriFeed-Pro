@@ -112,22 +112,60 @@ export default function App() {
 
   const logFeeding = async (e) => {
     e.preventDefault();
-    const userPath = ['artifacts', appId, 'users', user.uid];
+    const formData = new FormData(e.target);
     await addDoc(collection(db, ...userPath, 'logs'), {
-      groupId: e.target.groupId.value,
-      feedId: e.target.feedId.value,
-      amount: parseFloat(e.target.amount.value),
-      timestamp: new Date().toISOString()
+      groupId: formData.get('groupId'),
+      feedId: formData.get('feedId'),
+      logType: formData.get('logType'),
+      bunkScore: formData.get('bunkScore') || null, // Capture the score!
+      amount: parseFloat(formData.get('amount')),
+      timestamp: new Date().toISOString(),
+      date: new Date().toISOString().split('T')[0]
+      });
+    const userPath = ['artifacts', appId, 'users', user.uid];
+    const now = new Date();
+    
+    await addDoc(collection(db, ...userPath, 'logs'), {
+      groupId: formData.get('groupId'),
+      feedId: formData.get('feedId'),
+      amount: parseFloat(formData.get('amount')),
+      logType: formData.get('logType'), // refill, consumption, or audit
+      timestamp: now.toISOString(),
+      date: now.toISOString().split('T')[0] // Stores as "2026-05-12"
     });
     e.target.reset();
   };
 
-  const calculateMargin = (group) => {
-    const groupLogs = logs.filter(l => l.groupId === group.id);
+ const calculateMargin = (group) => {
+    // 1. Get logs just for this pen, sorted by time
+    const groupLogs = logs
+      .filter(l => l.groupId === group.id)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // 2. Find the most recent "Audit" (This is our 'known' starting point)
+    const lastAudit = groupLogs.find(l => l.logType === 'audit');
+    const lastAuditTime = lastAudit ? new Date(lastAudit.timestamp) : new Date(0);
+
+    // 3. Find all "Refills" that happened SINCE that audit
+    const refillsSinceAudit = groupLogs.filter(l => 
+      l.logType === 'refill' && new Date(l.timestamp) > lastAuditTime
+    );
+
+    // 4. Calculate Total Consumption cost
+    // If we have an audit, we assume the 'Audit amount' is still in the bin, 
+    // so we only charge for what was consumed (Daily Feeding logs).
     const feedCost = groupLogs.reduce((acc, log) => {
       const item = inventory.find(i => i.id === log.feedId);
-      return acc + (item ? item.costPerUnit * log.amount : 0);
+      if (!item) return acc;
+      
+      // For now, we sum 'consumption' logs. 
+      // In a 'Bulk' mode, we'd calculate: (Refills) - (Current Audit)
+      if (log.logType === 'consumption') {
+        return acc + (item.costPerUnit * log.amount);
+      }
+      return acc;
     }, 0);
+
     return (group.headCount * group.dailyRevenue) - feedCost;
   };
 
@@ -245,32 +283,90 @@ export default function App() {
 
         {activeTab === 'logs' && (
           <div className="space-y-8">
-            <h2 className="text-4xl font-black italic uppercase">Feeding Logs</h2>
-            <form onSubmit={logFeeding} className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
-              <select name="groupId" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white">
-                <option value="">Select Pen</option>
-                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
-              <select name="feedId" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white">
-                <option value="">Select Feed</option>
-                {inventory.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-              </select>
-              <input required name="amount" type="number" step="0.01" placeholder="Amount" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white" />
-              <button className="bg-emerald-500 text-black font-black rounded-xl uppercase flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Plus size={18}/> Log Feed</button>
+            <div className="flex justify-between items-end">
+              <h2 className="text-4xl font-black italic uppercase">Feeding Logs</h2>
+              <p className="text-emerald-500/50 text-[10px] font-black uppercase tracking-[0.2em]">Bunks & Bins Tracking</p>
+            </div>
+            
+            {/* FEEDING ENTRY FORM */}
+            <form onSubmit={logFeeding} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 bg-black border-2 border-emerald-900/30 p-8 rounded-[2rem]">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase text-white/30 ml-2">Location</label>
+                <select name="groupId" required className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white font-bold appearance-none">
+                  <option value="">Select Pen</option>
+                  {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase text-white/30 ml-2">Ration/Feed</label>
+                <select name="feedId" required className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white font-bold appearance-none">
+                  <option value="">Select Feed</option>
+                  {inventory.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase text-white/30 ml-2">Log Type</label>
+                <select name="logType" required className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white font-bold text-xs uppercase appearance-none">
+                  <option value="consumption">Daily Bunk Feed</option>
+                  <option value="refill">Tank/Bin Refill</option>
+                  <option value="audit">Tank/Bin Audit</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase text-white/30 ml-2">Bunk Score (Opt)</label>
+                <select name="bunkScore" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 text-white text-xs font-bold uppercase appearance-none">
+                  <option value="">No Score</option>
+                  <option value="0">0 - Slickside</option>
+                  <option value="1">1 - Scattered</option>
+                  <option value="2">2 - Heavy Leftover</option>
+                  <option value="3">3 - Overfed</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase text-white/30 ml-2">Amount</label>
+                <input required name="amount" type="number" step="0.01" placeholder="0.00" className="bg-[#111] p-4 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none text-white font-bold" />
+              </div>
+
+              <div className="flex flex-col gap-2 justify-end">
+                <button className="bg-emerald-500 text-black font-black h-[58px] rounded-xl uppercase flex items-center justify-center gap-2 hover:scale-105 transition-all shadow-lg shadow-emerald-500/10">
+                  <Plus size={18}/> Log Entry
+                </button>
+              </div>
             </form>
+
+            {/* LOG HISTORY */}
             <div className="space-y-3">
               {logs.map(log => {
                 const g = groups.find(x => x.id === log.groupId);
                 const i = inventory.find(x => x.id === log.feedId);
+                const isRefill = log.logType === 'refill';
+                const isAudit = log.logType === 'audit';
+                
                 return (
-                  <div key={log.id} className="bg-black/40 border border-white/5 p-5 rounded-2xl flex justify-between items-center group">
+                  <div key={log.id} className="bg-black/40 border border-white/5 p-5 rounded-2xl flex justify-between items-center group hover:border-emerald-500/30 transition-colors">
                     <div className="flex items-center gap-4">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <span className="font-black uppercase italic text-sm tracking-tight">
-                            {g?.name || 'Deleted Pen'} <span className="text-emerald-500/50 mx-2">consumed</span> {log.amount} {i?.unit || 'Units'} <span className="text-emerald-500/50 mx-2">of</span> {i?.name || 'Deleted Ingredient'}
-                        </span>
+                        <div className={`w-2 h-2 rounded-full ${isRefill ? 'bg-blue-500' : isAudit ? 'bg-amber-500' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`}></div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{log.date || 'Today'}</span>
+                            {log.bunkScore && (
+                              <span className="bg-white/5 text-[9px] px-2 py-0.5 rounded text-white/50 font-black uppercase">Score: {log.bunkScore}</span>
+                            )}
+                          </div>
+                          <span className="font-black uppercase italic text-sm tracking-tight">
+                              {g?.name || 'Unknown Pen'} 
+                              <span className={`${isRefill ? 'text-blue-500' : isAudit ? 'text-amber-500' : 'text-emerald-500/50'} mx-2 uppercase text-[10px] not-italic font-black`}>
+                                {isRefill ? 'Refilled' : isAudit ? 'Audited' : 'Consumed'}
+                              </span> 
+                              {log.amount} {i?.unit || 'Units'} <span className="text-white/20 italic lowercase mx-1">of</span> {i?.name || 'Feed'}
+                          </span>
+                        </div>
                     </div>
-                    <button onClick={() => confirmDelete('logs', log.id)} className="text-white/10 group-hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                    <button onClick={() => confirmDelete('logs', log.id)} className="text-white/5 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
                   </div>
                 );
               })}
